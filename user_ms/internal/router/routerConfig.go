@@ -15,6 +15,7 @@ type MainRoute struct{}
 
 func (m MainRoute) RegisterRoute(r *gin.Engine) {
 	RegisterGenericRoute(r)
+	RegisterAuthRoute(r)
 }
 
 func RegisterGenericRoute(r *gin.Engine) {
@@ -26,6 +27,6 @@ func RegisterAuthRoute(r *gin.Engine) {
 	apiGroup := r.Group("/api")
 	apiGroup.Use()
 	{
-		apiGroup.POST("/getUserInfo", login)
+		apiGroup.GET("/getUserInfo", getUserInfo)
 	}
 }

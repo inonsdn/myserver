@@ -69,3 +69,9 @@ func login(c *gin.Context) {
 		ExpirationTimestamp: tokenTimestamp,
 	})
 }
+
+func getUserInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "yours",
+	})
+}

@@ -38,4 +38,4 @@ require (
 
 	"github.com/inonsdn/myserver/http_con" v0.0.0
 )
-replace github.com/inonsdn/http_con => ../http_con
+replace github.com/inonsdn/myserver/http_con => ../http_con

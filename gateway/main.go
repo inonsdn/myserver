@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "github.com/inonsdn/http_con"
 	"github.com/inonsdn/myserver/gateway/internal/router"
 	"github.com/inonsdn/myserver/http_con"
 )

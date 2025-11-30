@@ -12,7 +12,6 @@ type MainRoute struct{}
 
 func (m MainRoute) RegisterRoute(r *gin.Engine) {
 	RegisterGenericRoute(r)
-	RegisterAuthRoute(r)
 	RegisterUserMSRoute(r)
 }
 
@@ -31,12 +30,10 @@ func RegisterUserMSRoute(r *gin.Engine) {
 
 	// register this will forward to user ms
 	r.POST("/login", forwardToUserMs(proxy))
-}
 
-func RegisterAuthRoute(r *gin.Engine) {
 	apiGroup := r.Group("/api")
 	apiGroup.Use(AuthorizeJWT())
 	{
-		apiGroup.GET("/getUserInfo")
+		apiGroup.GET("/getUserInfo", forwardToUserMs(proxy))
 	}
 }
