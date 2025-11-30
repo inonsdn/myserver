@@ -1,0 +1,5 @@
+Requirements
+- go get github.com/gin-gonic/gin
+
+Run
+go run main.go
