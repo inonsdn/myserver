@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/inonsdn/myserver/httpcon"
+	"github.com/inonsdn/http_con"
+	"github.com/inonsdn/myserver/gateway/internal/config"
 )
 
 func main() {
-	con, err := httpcon.InitHandlerWithGroup()
-	if err != nil {
-		return
-	}
-	go con.Run()
+	con := http_con.NewHandler()
+	con.RegisterRoute(config.MainRoute{})
+
+	go con.Run(":8080")
 
 	con.WaitAndGetStatus()
 }

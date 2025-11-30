@@ -67,7 +67,8 @@ func login(c *gin.Context) {
 	err := c.ShouldBindJSON(&loginReq)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed",
+			"error":     "Failed",
+			"traceback": err.Error(),
 		})
 	}
 
