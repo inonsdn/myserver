@@ -3,8 +3,10 @@ package router
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -44,14 +46,47 @@ func AuthorizeJWT() gin.HandlerFunc {
 		token := getTokenFromHeader(authHeader)
 
 		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "missing token, reauthorize again",
 			})
+			return
 		}
 
-		c.Request.Header.Set("User-Id", "1")
-		c.Set("userId", "1")
-		c.Next()
+		claims := jwt.MapClaims{}
+		parsedToken, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+			// TODO: replace with your actual signing key or key lookup
+			return []byte("super-secret-demo"), nil
+		})
+		if err != nil || parsedToken == nil || !parsedToken.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid token",
+			})
+			return
+		}
 
+		expUnix, ok := claims["expiredUnix"].(float64)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "not found expiration time",
+			})
+			return
+		}
+
+		expTime := time.Unix(int64(expUnix), 0)
+		loginTime := time.Now()
+		if loginTime.Sub(expTime) > time.Duration(tokenTimestamp) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "token expired",
+			})
+			return
+		}
+
+		userId, ok := claims["userId"].(string)
+		if !ok {
+			userId = "-1"
+		}
+		c.Request.Header.Set("userId", userId)
+		c.Set("userId", userId)
+		c.Next()
 	}
 }

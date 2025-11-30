@@ -46,10 +46,10 @@ func login(c *gin.Context) {
 
 	// generate jwt token
 	claims := jwt.MapClaims{
-		"sub": userId,
-		"exp": expirationTime.Unix(),
-		"iat": loginTime.Unix(),
-		"iss": "user-ms",
+		"userId":      userId,
+		"expiredUnix": expirationTime.Unix(),
+		"authUnix":    loginTime.Unix(),
+		"iss":         "user-ms",
 	}
 
 	// generate new token with claims map and method
@@ -71,7 +71,8 @@ func login(c *gin.Context) {
 }
 
 func getUserInfo(c *gin.Context) {
+	userId := c.Request.Header.Get("userId")
 	c.JSON(http.StatusOK, gin.H{
-		"message": "yours",
+		"message": userId,
 	})
 }
