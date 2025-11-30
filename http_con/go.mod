@@ -1,4 +1,4 @@
-module github.com/inonsdn/myserver/gateway
+module github.com/inonsdn/http_con
 
 go 1.23.5
 
@@ -35,7 +35,4 @@ require (
 	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
-
-	"github.com/inonsdn/myserver/http_con" v0.0.0
 )
-replace github.com/inonsdn/http_con => ../http_con
