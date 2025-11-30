@@ -7,23 +7,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var ConfigPaths = []HttpPath{
-	{
-		name:     "/ping",
-		callback: pong,
-		method:   "GET",
-	},
-	{
-		name:     "/getUser",
-		callback: getUser,
-		method:   "GET",
-	},
-}
+const (
+	routeMethod_GET  = "GET"
+	routeMethod_POST = "POST"
+)
 
 type HttpPath struct {
 	name     string
 	callback func(*gin.Context)
 	method   string
+}
+
+type HttpGroupPath struct {
+	name  string
+	paths []HttpPath
 }
 
 // `...` is struct tag that some lib can read it

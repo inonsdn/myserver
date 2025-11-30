@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	con, err := httpcon.InitHandler()
+	con, err := httpcon.InitHandlerWithGroup()
 	if err != nil {
 		return
 	}
