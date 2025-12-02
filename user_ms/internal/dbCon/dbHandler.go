@@ -11,31 +11,12 @@ type SqlCon struct {
 }
 
 type SqlResult interface {
-	Update(rows *sql.Rows)
+	update(rows *sql.Rows)
 }
 
-type UserResult struct {
-	name string
-	id   string
-}
-
-func (u *UserResult) Update(rows *sql.Rows) {
-	err := rows.Scan(u.name, u.id)
-	if err != nil {
-		fmt.Println("Found error when get from rows", err)
-	}
-}
-
-// func NewDbHandler() *SqlCon {
-// 	db, err := sql.Open("mysql", "user:password@/database-name")
-// 	if err != nil {
-// 		fmt.Println("Cannot open sql")
-// 		return nil
-// 	}
-// 	return &SqlCon{
-// 		db: db,
-// 	}
-// }
+// //////////////////////////////////////
+//
+// Helper Function
 
 func (s *SqlCon) execute(statement string, args ...any) (any, error) {
 	db, err := sql.Open(s.driver, s.dataSource)
@@ -64,12 +45,29 @@ func (s *SqlCon) query(dest SqlResult, statement string, args ...any) error {
 
 	rows, err := db.Query(statement, args...)
 
-	dest.Update(rows)
+	dest.update(rows)
 
 	return nil
 }
 
-func (s *SqlCon) GetUserById(userId string) {
+// //////////////////////////////////////
+//
+// Public Function
+type UserResult struct {
+	name string
+	id   string
+}
+
+// implement method update of interface sql result
+func (u *UserResult) update(rows *sql.Rows) {
+	err := rows.Scan(u.name, u.id)
+	if err != nil {
+		fmt.Println("Found error when get from rows", err)
+	}
+}
+
+func (s *SqlCon) GetUserById(userId string) *UserResult {
 	userResult := UserResult{}
 	s.query(&userResult, "SELECT * FROM User WHERE id = ?", userId)
+	return &userResult
 }

@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
-	con := http_con.NewHandler()
-	con.RegisterRoute(router.MainRoute{})
+	userRouterHandler := router.NewRouterHandler()
+	con := http_con.NewHandler(userRouterHandler)
+	con.RegisterRoute()
 
 	go con.Run(":8081")
 

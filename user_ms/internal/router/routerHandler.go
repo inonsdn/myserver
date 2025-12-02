@@ -3,10 +3,15 @@ package router
 import (
 	"net/http"
 	"time"
+	dbcon "userms/internal/dbCon"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+type UserRouterHandler struct {
+	localCon *dbcon.SqlCon
+}
 
 type loginRequest struct {
 	Username string `json:"username" binding:"required"`
@@ -24,7 +29,17 @@ func pong(c *gin.Context) {
 	})
 }
 
-func login(c *gin.Context) {
+func NewRouterHandler() *UserRouterHandler {
+	// TODO: make local happen
+	sqlCon := dbcon.SqlCon{
+		// driver: "",
+	}
+	return &UserRouterHandler{
+		localCon: &sqlCon,
+	}
+}
+
+func (u *UserRouterHandler) login(c *gin.Context) {
 	var loginReq loginRequest
 
 	// bind context request to variable that expected username and password
@@ -70,8 +85,12 @@ func login(c *gin.Context) {
 	})
 }
 
-func getUserInfo(c *gin.Context) {
+func (u *UserRouterHandler) getUserInfo(c *gin.Context) {
 	userId := c.Request.Header.Get("userId")
+
+	// TODO: implement function to query item from local
+	// u.localCon.GetUserById(userId)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": userId,
 	})

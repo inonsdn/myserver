@@ -11,22 +11,24 @@ const (
 
 )
 
-type MainRoute struct{}
-
-func (m MainRoute) RegisterRoute(r *gin.Engine) {
-	RegisterGenericRoute(r)
-	RegisterAuthRoute(r)
+func (u *UserRouterHandler) GetStruct() *UserRouterHandler {
+	return u
 }
 
-func RegisterGenericRoute(r *gin.Engine) {
+func (u *UserRouterHandler) RegisterRoute(r *gin.Engine) {
+	u.registerGenericRoute(r)
+	u.registerAuthRoute(r)
+}
+
+func (u *UserRouterHandler) registerGenericRoute(r *gin.Engine) {
 	r.GET("/ping", pong)
-	r.POST("/login", login)
+	r.POST("/login", u.login)
 }
 
-func RegisterAuthRoute(r *gin.Engine) {
+func (u *UserRouterHandler) registerAuthRoute(r *gin.Engine) {
 	apiGroup := r.Group("/api")
 	apiGroup.Use()
 	{
-		apiGroup.GET("/getUserInfo", getUserInfo)
+		apiGroup.GET("/getUserInfo", u.getUserInfo)
 	}
 }

@@ -7,24 +7,26 @@ import (
 )
 
 type ConnectionHandler struct {
-	route   *gin.Engine
-	sigChan chan int
+	route         *gin.Engine
+	routerHandler RouteRegistration
+	sigChan       chan int
 }
 
 type RouteRegistration interface {
 	RegisterRoute(r *gin.Engine)
 }
 
-func NewHandler() *ConnectionHandler {
+func NewHandler(rh RouteRegistration) *ConnectionHandler {
 	route := gin.Default()
 	return &ConnectionHandler{
-		route:   route,
-		sigChan: make(chan int, 0),
+		route:         route,
+		routerHandler: rh,
+		sigChan:       make(chan int, 0),
 	}
 }
 
-func (c *ConnectionHandler) RegisterRoute(r RouteRegistration) {
-	r.RegisterRoute(c.route)
+func (c *ConnectionHandler) RegisterRoute() {
+	c.routerHandler.RegisterRoute(c.route)
 }
 
 func (c *ConnectionHandler) WaitAndGetStatus() int {
