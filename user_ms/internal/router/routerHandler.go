@@ -29,13 +29,10 @@ func pong(c *gin.Context) {
 	})
 }
 
-func NewRouterHandler() *UserRouterHandler {
-	// TODO: make local happen
-	sqlCon := dbcon.SqlCon{
-		// driver: "",
-	}
+func NewRouterHandler(cfg *dbcon.DbConfig) *UserRouterHandler {
+	sqlCon := dbcon.NewSqlCon(cfg)
 	return &UserRouterHandler{
-		localCon: &sqlCon,
+		localCon: sqlCon,
 	}
 }
 

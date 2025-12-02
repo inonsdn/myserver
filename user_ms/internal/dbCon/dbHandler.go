@@ -3,6 +3,8 @@ package dbcon
 import (
 	"database/sql"
 	"fmt"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type SqlCon struct {
@@ -12,6 +14,29 @@ type SqlCon struct {
 
 type SqlResult interface {
 	update(rows *sql.Rows)
+}
+
+type DbConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+}
+
+func NewSqlCon(cfg *DbConfig) *SqlCon {
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4&loc=Local",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.DBName,
+	)
+	return &SqlCon{
+		driver:     "mysql",
+		dataSource: dsn,
+	}
 }
 
 // //////////////////////////////////////
@@ -53,6 +78,7 @@ func (s *SqlCon) query(dest SqlResult, statement string, args ...any) error {
 // //////////////////////////////////////
 //
 // Public Function
+
 type UserResult struct {
 	name string
 	id   string
