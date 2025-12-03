@@ -30,7 +30,8 @@ func pong(c *gin.Context) {
 }
 
 func NewRouterHandler(cfg *dbcon.DbConfig) *UserRouterHandler {
-	sqlCon := dbcon.NewSqlCon(cfg)
+	sqlCon, err := dbcon.NewSqlCon(cfg)
+	sqlCon.InitializeSchema()
 	return &UserRouterHandler{
 		localCon: sqlCon,
 	}
@@ -87,8 +88,17 @@ func (u *UserRouterHandler) getUserInfo(c *gin.Context) {
 
 	// TODO: implement function to query item from local
 	// u.localCon.GetUserById(userId)
+	userResult, err := u.localCon.GetUserById(userId)
+
+	if err != nil {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": userId,
+		"message": gin.H{
+			"name": userResult.Name,
+			"id":   userResult.Id,
+		},
 	})
 }

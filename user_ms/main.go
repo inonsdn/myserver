@@ -10,11 +10,11 @@ import (
 func main() {
 	// TODO: setting this
 	localConfig := dbcon.DbConfig{
-		// Host     string
-		// Port     int
-		// User     string
-		// Password string
-		// DBName   string
+		Host:     "localhost",
+		Port:     8000,
+		User:     "admin",
+		Password: "test",
+		DBName:   "userdb",
 	}
 	userRouterHandler := router.NewRouterHandler(&localConfig)
 	con := http_con.NewHandler(userRouterHandler)

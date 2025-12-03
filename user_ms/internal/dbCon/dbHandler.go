@@ -10,10 +10,11 @@ import (
 type SqlCon struct {
 	driver     string
 	dataSource string
+	db         *sql.DB
 }
 
 type SqlResult interface {
-	update(rows *sql.Rows)
+	update(rows *sql.Rows) error
 }
 
 type DbConfig struct {
@@ -24,7 +25,7 @@ type DbConfig struct {
 	DBName   string
 }
 
-func NewSqlCon(cfg *DbConfig) *SqlCon {
+func NewSqlCon(cfg *DbConfig) (*SqlCon, error) {
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4&loc=Local",
 		cfg.User,
@@ -33,10 +34,16 @@ func NewSqlCon(cfg *DbConfig) *SqlCon {
 		cfg.Port,
 		cfg.DBName,
 	)
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		fmt.Println("Cannot open sql")
+		return nil, err
+	}
 	return &SqlCon{
 		driver:     "mysql",
 		dataSource: dsn,
-	}
+		db:         db,
+	}, nil
 }
 
 // //////////////////////////////////////
@@ -44,14 +51,14 @@ func NewSqlCon(cfg *DbConfig) *SqlCon {
 // Helper Function
 
 func (s *SqlCon) execute(statement string, args ...any) (any, error) {
-	db, err := sql.Open(s.driver, s.dataSource)
-	if err != nil {
-		fmt.Println("Cannot open sql")
-		return nil, err
-	}
-	defer db.Close()
+	// db, err := sql.Open(s.driver, s.dataSource)
+	// if err != nil {
+	// 	fmt.Println("Cannot open sql")
+	// 	return nil, err
+	// }
+	// defer db.Close()
 
-	result, err := db.Exec(statement, args...)
+	result, err := s.db.Exec(statement, args...)
 	if err != nil {
 		fmt.Println("Cannot execute statement.")
 		return nil, err
@@ -61,39 +68,66 @@ func (s *SqlCon) execute(statement string, args ...any) (any, error) {
 }
 
 func (s *SqlCon) query(dest SqlResult, statement string, args ...any) error {
-	db, err := sql.Open(s.driver, s.dataSource)
-	if err != nil {
-		fmt.Println("Cannot open sql")
-		return err
-	}
-	defer db.Close()
+	// db, err := sql.Open(s.driver, s.dataSource)
+	// if err != nil {
+	// 	fmt.Println("Cannot open sql")
+	// 	return err
+	// }
+	// defer db.Close()
 
-	rows, err := db.Query(statement, args...)
+	rows, err := s.db.Query(statement, args...)
+	defer rows.Close()
 
-	dest.update(rows)
-
-	return nil
+	return dest.update(rows)
 }
 
 // //////////////////////////////////////
 //
 // Public Function
+func (s *SqlCon) InitializeSchema() error {
+	// db, err := sql.Open(s.driver, s.dataSource)
+	// if err != nil {
+	// 	fmt.Println("Cannot open sql")
+	// 	return err
+	// }
+	// defer db.Close()
+
+	for _, statement := range schemaStrList {
+		_, err := s.db.Exec(statement)
+		if err != nil {
+			break
+		}
+	}
+
+	return nil
+}
 
 type UserResult struct {
-	name string
-	id   string
+	Name string
+	Id   string
 }
 
 // implement method update of interface sql result
-func (u *UserResult) update(rows *sql.Rows) {
-	err := rows.Scan(u.name, u.id)
+func (u *UserResult) update(rows *sql.Rows) error {
+	if !rows.Next() {
+		// no rows returned
+		if err := rows.Err(); err != nil {
+			fmt.Println("rows error:", err)
+			return err
+		}
+		// no error, just no data
+		return sql.ErrNoRows
+	}
+	err := rows.Scan(&u.Name, &u.Id)
 	if err != nil {
 		fmt.Println("Found error when get from rows", err)
+		return err
 	}
+	return nil
 }
 
-func (s *SqlCon) GetUserById(userId string) *UserResult {
+func (s *SqlCon) GetUserById(userId string) (*UserResult, error) {
 	userResult := UserResult{}
-	s.query(&userResult, "SELECT * FROM User WHERE id = ?", userId)
-	return &userResult
+	err := s.query(&userResult, "SELECT * FROM user WHERE id = ?", userId)
+	return &userResult, err
 }
