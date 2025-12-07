@@ -1,22 +1,18 @@
 package main
 
 import (
-	dbcon "userms/internal/dbCon"
 	"userms/internal/router"
 
 	"github.com/inonsdn/myserver/http_con"
 )
 
 func main() {
-	// TODO: setting this
-	localConfig := dbcon.DbConfig{
-		Host:     "localhost",
-		Port:     3306,
-		User:     "root",
-		Password: "rootPass",
-		DBName:   "userdb",
+	// define config function to override default config
+	configFuncs := []router.OptsFunc{
+		tokenPeriodTimestamp(int64(120)),
 	}
-	userRouterHandler := router.NewRouterHandler(&localConfig)
+
+	userRouterHandler := router.NewRouterHandler(configFuncs...)
 	con := http_con.NewHandler(userRouterHandler)
 	con.RegisterRoute()
 

@@ -13,6 +13,7 @@ import (
 
 type UserRouterHandler struct {
 	localCon *dbcon.SqlCon
+	opts     *Options
 }
 
 type loginRequest struct {
@@ -31,8 +32,12 @@ func pong(c *gin.Context) {
 	})
 }
 
-func NewRouterHandler(cfg *dbcon.DbConfig) *UserRouterHandler {
-	sqlCon, err := dbcon.NewSqlCon(cfg)
+func NewRouterHandler(optsFuncs ...OptsFunc) *UserRouterHandler {
+	opts := defaultOptions()
+	for _, optsFunc := range optsFuncs {
+		optsFunc(&opts)
+	}
+	sqlCon, err := dbcon.NewSqlCon(&opts.DbConfig)
 	if err != nil {
 		fmt.Println("Error when router handler", err)
 		return nil
@@ -40,6 +45,7 @@ func NewRouterHandler(cfg *dbcon.DbConfig) *UserRouterHandler {
 	sqlCon.InitializeSchema()
 	return &UserRouterHandler{
 		localCon: sqlCon,
+		opts:     &opts,
 	}
 }
 
@@ -58,8 +64,6 @@ func (u *UserRouterHandler) login(c *gin.Context) {
 	// check that username and password is matched
 	userId, err := u.localCon.UserAuthentication(loginReq.Username, loginReq.Password)
 
-	fmt.Println("=========", userId)
-
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": err.Error(),
@@ -67,11 +71,9 @@ func (u *UserRouterHandler) login(c *gin.Context) {
 		return
 	}
 
-	// then get user id from db
-
 	// mock user id
 	loginTime := time.Now()
-	expirationTime := loginTime.Add(time.Duration(tokenTimestamp) * time.Second)
+	expirationTime := loginTime.Add(time.Duration(u.opts.TokenPeriodTimestamp) * time.Second)
 
 	// generate jwt token
 	claims := jwt.MapClaims{
@@ -85,7 +87,7 @@ func (u *UserRouterHandler) login(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// signing token with secret
-	signingToken, err := token.SignedString(jwtSecret)
+	signingToken, err := token.SignedString(u.opts.JwtSecret)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": err.Error(),
@@ -95,16 +97,14 @@ func (u *UserRouterHandler) login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, loginResponse{
 		AccessToken:         signingToken,
-		ExpirationTimestamp: tokenTimestamp,
+		ExpirationTimestamp: u.opts.TokenPeriodTimestamp,
 	})
 }
 
 func (u *UserRouterHandler) getUserInfo(c *gin.Context) {
 	userId := c.Request.Header.Get("userId")
-	fmt.Println("=========", userId)
 
-	// TODO: implement function to query item from local
-	// u.localCon.GetUserById(userId)
+	// query user from local
 	userResult, err := u.localCon.GetUserById(userId)
 
 	if err != nil {
