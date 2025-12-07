@@ -23,6 +23,7 @@ func (u *UserRouterHandler) RegisterRoute(r *gin.Engine) {
 func (u *UserRouterHandler) registerGenericRoute(r *gin.Engine) {
 	r.GET("/ping", pong)
 	r.POST("/login", u.login)
+	r.POST("/createUser", u.createUser)
 }
 
 func (u *UserRouterHandler) registerAuthRoute(r *gin.Engine) {

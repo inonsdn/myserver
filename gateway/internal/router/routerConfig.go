@@ -34,6 +34,7 @@ func RegisterUserMSRoute(r *gin.Engine) {
 
 	// register this will forward to user ms
 	r.POST("/login", forwardToUserMs(proxy))
+	r.POST("/createUser", forwardToUserMs(proxy))
 
 	apiGroup := r.Group("/api")
 	apiGroup.Use(AuthorizeJWT())

@@ -1,12 +1,14 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 	dbcon "userms/internal/dbCon"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type UserRouterHandler struct {
@@ -31,6 +33,10 @@ func pong(c *gin.Context) {
 
 func NewRouterHandler(cfg *dbcon.DbConfig) *UserRouterHandler {
 	sqlCon, err := dbcon.NewSqlCon(cfg)
+	if err != nil {
+		fmt.Println("Error when router handler", err)
+		return nil
+	}
 	sqlCon.InitializeSchema()
 	return &UserRouterHandler{
 		localCon: sqlCon,
@@ -50,10 +56,20 @@ func (u *UserRouterHandler) login(c *gin.Context) {
 	}
 
 	// check that username and password is matched
+	userId, err := u.localCon.UserAuthentication(loginReq.Username, loginReq.Password)
+
+	fmt.Println("=========", userId)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
 	// then get user id from db
 
 	// mock user id
-	userId := "no11n23"
 	loginTime := time.Now()
 	expirationTime := loginTime.Add(time.Duration(tokenTimestamp) * time.Second)
 
@@ -85,6 +101,7 @@ func (u *UserRouterHandler) login(c *gin.Context) {
 
 func (u *UserRouterHandler) getUserInfo(c *gin.Context) {
 	userId := c.Request.Header.Get("userId")
+	fmt.Println("=========", userId)
 
 	// TODO: implement function to query item from local
 	// u.localCon.GetUserById(userId)
@@ -99,6 +116,27 @@ func (u *UserRouterHandler) getUserInfo(c *gin.Context) {
 		"message": gin.H{
 			"name": userResult.Name,
 			"id":   userResult.Id,
+		},
+	})
+}
+
+func (u *UserRouterHandler) createUser(c *gin.Context) {
+
+	userInfo := dbcon.UserInfo{
+		Id: uuid.NewString(),
+	}
+
+	c.ShouldBindJSON(&userInfo)
+	err := u.localCon.CreateUser(userInfo)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": gin.H{
+			"id": userInfo.Id,
 		},
 	})
 }
