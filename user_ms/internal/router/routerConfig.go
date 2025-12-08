@@ -6,13 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var jwtSecret = []byte("super-secret-demo") // must match gateway
-
-const (
-	tokenTimestamp = int64(3600) // 1 hours for timestamp of token valid
-
-)
-
 type Options struct {
 	dbcon.DbConfig
 	TokenPeriodTimestamp int64
@@ -33,10 +26,6 @@ func defaultOptions() Options {
 		TokenPeriodTimestamp: int64(3600),
 		JwtSecret:            []byte("super-secret-demo"),
 	}
-}
-
-func (u *UserRouterHandler) GetStruct() *UserRouterHandler {
-	return u
 }
 
 func (u *UserRouterHandler) RegisterRoute(r *gin.Engine) {
