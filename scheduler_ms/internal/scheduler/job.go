@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	REMINDER_JOB_TYPE = 0
+)
+
 type SchedulerJob interface {
 	GetName() string
 	IsOneTime() bool

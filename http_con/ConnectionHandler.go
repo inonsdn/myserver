@@ -46,6 +46,13 @@ func (c *ConnectionHandler) WaitAndGetStatus() {
 }
 
 func (c *ConnectionHandler) Run(addr string) {
+	go c.Run(":8081")
+	c.WaitAndGetStatus()
+}
+
+func (c *ConnectionHandler) run(addr string) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
 	err := c.route.Run(addr)
 	if err != nil {
 		fmt.Println("Found error")

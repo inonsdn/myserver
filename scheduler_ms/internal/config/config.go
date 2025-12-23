@@ -26,7 +26,7 @@ func defaultOptions() Options {
 		port:        3306,
 		user:        "root",
 		password:    "rootPass",
-		dbName:      "scheduler",
+		dbName:      "schedulerdb",
 	}
 }
 
@@ -48,4 +48,15 @@ func (o *Options) GetLocalDbOptions() *LocalDbOptions {
 		password: o.password,
 		dbName:   o.dbName,
 	}
+}
+
+func (o *Options) DataSourceConfig() string {
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4&loc=Local",
+		o.user,
+		o.password,
+		o.host,
+		o.port,
+		o.dbName,
+	)
 }

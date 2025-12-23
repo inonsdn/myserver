@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"scheduler/internal/scheduler"
-	"time"
+	"scheduler/internal/config"
+	"scheduler/internal/localdb"
 )
 
 func testCallback() {
@@ -11,17 +11,42 @@ func testCallback() {
 }
 
 func runJobTest() {
-	schedulerHandler := scheduler.NewSchedulerHandler()
+	opts := config.GetOptions()
+	dbCon, err := localdb.NewLocalDb(opts)
+	if err != nil {
+		fmt.Println("Got error when init dbcon", err)
+		return
+	}
+	dbCon.InitializeSchema()
+	sjt := localdb.NewSchedulerJobTable(dbCon)
 
-	job := scheduler.NewDailyJob(
-		"TestJob", 0, 49, testCallback,
-	)
+	// sjob := localdb.NewReminderJob(
+	// 	"Test JOB", 0, 0, 0, 1, 5,
+	// )
+	// sjt.CreateSchedulerJob(sjob)
 
-	schedulerHandler.AddJob(job)
+	schedulerJob, err := sjt.GetAllJob()
 
-	go schedulerHandler.Run()
+	if err != nil {
+		fmt.Println("Got error when get all", err)
+		return
+	}
 
-	schedulerHandler.Stop(time.Second * 100)
+	fmt.Println(schedulerJob)
+
+	return
+
+	// schedulerHandler := scheduler.NewSchedulerHandler()
+
+	// job := scheduler.NewDailyJob(
+	// 	"TestJob", 0, 49, testCallback,
+	// )
+
+	// schedulerHandler.AddJob(job)
+
+	// go schedulerHandler.Run()
+
+	// schedulerHandler.Stop(time.Second * 100)
 }
 
 func main() {
