@@ -4,7 +4,13 @@ import (
 	"net/http"
 )
 
+// type of function to received route handler which is wrapper of connection
 type RouteHandlerFunc func(*RouteHandler)
+
+type RouteHandler struct {
+	w http.ResponseWriter
+	r *http.Request
+}
 
 // Create handler function for serve http
 // by wrapping function
@@ -12,22 +18,13 @@ type RouteHandlerFunc func(*RouteHandler)
 func makeHandler(f RouteHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// new handler for this response
-		rh := newRouteHandler(w, r)
+		rh := &RouteHandler{
+			w: w,
+			r: r,
+		}
 
 		// execute function
 		f(rh)
-	}
-}
-
-type RouteHandler struct {
-	w http.ResponseWriter
-	r *http.Request
-}
-
-func newRouteHandler(w http.ResponseWriter, r *http.Request) *RouteHandler {
-	return &RouteHandler{
-		w: w,
-		r: r,
 	}
 }
 
