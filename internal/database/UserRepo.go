@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	REPO_USER_NAME = "user"
+)
+
 type UserRepo struct {
 	*BaseRepo
 }
@@ -13,6 +17,14 @@ type UserRepo struct {
 type User struct {
 	id       string
 	username string
+}
+
+func RegisterRepo_User(dh *DatabaseHandler) {
+	dh.user = &UserRepo{
+		BaseRepo: &BaseRepo{
+			executor: dh.db,
+		},
+	}
 }
 
 func (u *UserRepo) CreateNewUser(username string) string {

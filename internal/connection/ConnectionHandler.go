@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"myserver/internal/config"
+	"myserver/internal/database"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,13 +14,15 @@ import (
 )
 
 type ConnectionHandler struct {
-	config *config.Config
+	config    *config.Config
+	dbHandler *database.DatabaseHandler
 }
 
-func NewConnectionHandler(config *config.Config) *ConnectionHandler {
+func NewConnectionHandler(config *config.Config, dbHandler *database.DatabaseHandler) *ConnectionHandler {
 	slog.Info("Create connection")
 	return &ConnectionHandler{
-		config: config,
+		config:    config,
+		dbHandler: dbHandler,
 	}
 }
 

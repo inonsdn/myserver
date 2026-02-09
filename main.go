@@ -18,7 +18,8 @@ func testDbCon() {
 		return
 	}
 
-	dbHandler := database.Connect(dbConfig)
+	pgExecutor := database.NewPGExecutor(dbConfig)
+	dbHandler := database.Connect(pgExecutor)
 
 	if dbHandler == nil {
 		return
@@ -40,9 +41,21 @@ func main() {
 
 	// load config
 	serverConfig := config.LoadConfig()
+	dbConfig, err := config.LoadDatabaseConfig()
+	if err != nil {
+		slog.Error("Got error when load config")
+		slog.Error(err.Error())
+		return
+	}
+	pgExecutor := database.NewPGExecutor(dbConfig)
+	dbHandler := database.Connect(pgExecutor)
+
+	if dbHandler == nil {
+		return
+	}
 
 	// construct http connection handler
-	handler := connection.NewConnectionHandler(serverConfig)
+	handler := connection.NewConnectionHandler(serverConfig, dbHandler)
 
 	// register route handler before run
 	handler.RegisterRoute()

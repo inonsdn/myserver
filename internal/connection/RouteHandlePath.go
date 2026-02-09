@@ -4,7 +4,8 @@ import "fmt"
 
 func getRoutes() map[string]RouteHandlerFunc {
 	return map[string]RouteHandlerFunc{
-		"/": Home,
+		"/":        Home,
+		"/getUser": Home,
 	}
 }
 

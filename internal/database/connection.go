@@ -5,12 +5,78 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type BaseRepo struct {
-	pool *pgxpool.Pool
+	pool     *pgxpool.Pool
+	executor DBExecutor
+}
+
+type Record struct {
+	id                  uuid.UUID
+	createdTimestamp    time.Time
+	lastUpdateTimestamp time.Time
+}
+
+// Interface for execute to databse, expected method that must have
+//
+//	Connect to connect to database server
+//	Disconnect to disconnect from database server
+//	Query for query item to database and expected to return map of column name to value and error if existed
+type DBExecutor interface {
+	Connect() error
+	Disconnect()
+	Query(context.Context, string, ...any) ([]map[string]any, error)
+}
+
+// One of executor is Postgres database to connect to Supabase
+type PGExecutor struct {
+	config *pgxpool.Config
+	pool   *pgxpool.Pool
+}
+
+func NewPGExecutor(config *pgxpool.Config) *PGExecutor {
+	return &PGExecutor{
+		config: config,
+	}
+}
+
+func (pg *PGExecutor) Query(ctx context.Context, statement string, args ...any) ([]map[string]any, error) {
+	allRows := []map[string]any{}
+	rows, err := pg.pool.Query(ctx, statement, args...)
+	if err != nil {
+		return allRows, err
+	}
+	defer rows.Close()
+	fds := rows.FieldDescriptions()
+	for rows.Next() {
+		values, _ := rows.Values()
+		row := map[string]any{}
+		for i, fd := range fds {
+			row[string(fd.Name)] = values[i]
+		}
+		allRows = append(allRows, row)
+	}
+	return allRows, nil
+}
+
+func (pg *PGExecutor) Connect() error {
+	poolCon, err := pgxpool.NewWithConfig(context.Background(), pg.config)
+	if err != nil {
+		slog.Error(err.Error())
+		return err
+	}
+	pg.pool = poolCon
+	return nil
+}
+
+func (pg *PGExecutor) Disconnect() {
+	if pg.pool != nil {
+		pg.pool.Close()
+	}
 }
 
 // func (r *BaseRepo) WithTransaction(ctx context.Context, fn func(pgx.Tx) (any, error)) error {
@@ -40,38 +106,35 @@ func (r *BaseRepo) query(statement string, args ...any) {
 }
 
 type DatabaseHandler struct {
-	pool *pgxpool.Pool
-	user *UserRepo
+	db        DBExecutor
+	user      *UserRepo
+	scheduler *SchedulerJobRepo
+	notes     *NotesRepo
 }
 
-func Connect(config *pgxpool.Config) *DatabaseHandler {
-	poolCon, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		slog.Error("Got error when connect database")
-		slog.Error(err.Error())
-		return nil
-	}
+func registerRepo(dh *DatabaseHandler) {
+	RegisterRepo_User(dh)
+	RegisterRepo_Notes(dh)
+}
 
-	return &DatabaseHandler{
-		pool: poolCon,
-		user: &UserRepo{
-			BaseRepo: &BaseRepo{
-				pool: poolCon,
-			},
-		},
+func Connect(db DBExecutor) *DatabaseHandler {
+	db.Connect()
+	databaseHandler := DatabaseHandler{
+		db: db,
 	}
+	registerRepo(&databaseHandler)
+
+	return &databaseHandler
 }
 
 func (d *DatabaseHandler) GetUserConnection() *UserRepo {
 	return d.user
 }
 
-func (d *DatabaseHandler) Execute(statement string, args ...any) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	d.pool.Exec(ctx, statement, args...)
+func (d *DatabaseHandler) GetSchedulerJobConnection() *SchedulerJobRepo {
+	return d.scheduler
 }
 
-func (d *DatabaseHandler) Disconnect() {
-	d.pool.Close()
+func (d *DatabaseHandler) GetNotesConnection() *NotesRepo {
+	return d.notes
 }
