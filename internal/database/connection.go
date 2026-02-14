@@ -10,6 +10,29 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type Uuid struct {
+	uuid uuid.UUID
+}
+
+func (u *Uuid) ToString() string {
+	return u.uuid.String()
+}
+
+func UuidCvt(v [16]uint8) uuid.UUID {
+	return uuid.UUID(v)
+}
+
+// func UuidCvt(v any) Uuid {
+// 	var u uuid.UUID
+// 	switch x := v.(type) {
+// 	case [16]uint8:
+// 		u = uuid.UUID(x)
+// 	}
+// 	return Uuid{
+// 		uuid: u,
+// 	}
+// }
+
 type BaseRepo struct {
 	pool     *pgxpool.Pool
 	executor DBExecutor

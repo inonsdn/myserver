@@ -18,6 +18,9 @@ type ConnectionHandler struct {
 	dbHandler *database.DatabaseHandler
 }
 
+// construct a connection handler for storing config and db handler
+// this struct will make router function handler able to access database
+// and manipulate data to database with limitation of db handler
 func NewConnectionHandler(config *config.Config, dbHandler *database.DatabaseHandler) *ConnectionHandler {
 	slog.Info("Create connection")
 	return &ConnectionHandler{
@@ -26,6 +29,10 @@ func NewConnectionHandler(config *config.Config, dbHandler *database.DatabaseHan
 	}
 }
 
+// register route path for handle http path request
+// route handler function must received router handler object and returning error
+//
+// TODO: for middleware will implement next...
 func (c *ConnectionHandler) RegisterRoute() {
 	// get route from difinition in routeHandlePath
 	pathToHandler := getRoutes()
@@ -36,11 +43,13 @@ func (c *ConnectionHandler) RegisterRoute() {
 	for path, handler := range pathToHandler {
 
 		// set handle
-		http.Handle(path, makeHandler(handler))
+		http.Handle(path, makeHandler(handler, c.dbHandler))
 		slog.Debug(fmt.Sprintf("Found path for register %s", path))
 	}
 }
 
+// run server to lister as port which registered
+// after end will send signal through given channel
 func runServer(server *http.Server, done chan struct{}) {
 	defer func() { done <- struct{}{} }()
 
@@ -51,11 +60,15 @@ func runServer(server *http.Server, done chan struct{}) {
 	}
 }
 
+// run server and handle to shutdown server gracefully
+// such as got signal interupt or terminate
 func (c *ConnectionHandler) RunServe() {
 	// get address to serve from config
 	addr := c.config.GetAddr()
 	slog.Info(fmt.Sprintf("Run serve address %s", addr))
 
+	// register channel for trap signal to this process
+	// if got sigint or sigterm, will handle to close service gracefully
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -63,17 +76,21 @@ func (c *ConnectionHandler) RunServe() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// server info
 	server := &http.Server{
 		Addr: addr,
 	}
 
+	// channel for handle server done
 	serveDone := make(chan struct{})
 	go runServer(server, serveDone)
 
+	// wait all channel
 	select {
-	// cancel with
+	// case got signal to process, shutdown server
 	case <-sigChan:
 		server.Shutdown(ctx)
+	// case server process is done even error
 	case <-serveDone:
 		slog.Info("Server is shutting down")
 	}
