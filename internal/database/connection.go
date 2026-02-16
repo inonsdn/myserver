@@ -22,6 +22,10 @@ func UuidCvt(v [16]uint8) uuid.UUID {
 	return uuid.UUID(v)
 }
 
+func UuidCvtFromDb(v any) uuid.UUID {
+	return uuid.UUID(v.([16]uint8))
+}
+
 // func UuidCvt(v any) Uuid {
 // 	var u uuid.UUID
 // 	switch x := v.(type) {
@@ -53,6 +57,7 @@ type DBExecutor interface {
 	Connect() error
 	Disconnect()
 	Query(context.Context, string, ...any) ([]map[string]any, error)
+	QueryRow(context.Context, []any, string, ...any) error
 }
 
 // One of executor is Postgres database to connect to Supabase
@@ -65,6 +70,14 @@ func NewPGExecutor(config *pgxpool.Config) *PGExecutor {
 	return &PGExecutor{
 		config: config,
 	}
+}
+
+func (pg *PGExecutor) QueryRow(ctx context.Context, dest []any, statement string, args ...any) error {
+	err := pg.pool.QueryRow(ctx, statement, args...).Scan(dest...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (pg *PGExecutor) Query(ctx context.Context, statement string, args ...any) ([]map[string]any, error) {

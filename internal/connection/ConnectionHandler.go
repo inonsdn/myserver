@@ -34,17 +34,9 @@ func NewConnectionHandler(config *config.Config, dbHandler *database.DatabaseHan
 //
 // TODO: for middleware will implement next...
 func (c *ConnectionHandler) RegisterRoute() {
-	// get route from difinition in routeHandlePath
-	pathToHandler := getRoutes()
-
-	slog.Info(fmt.Sprintf("Register %d routes", len(pathToHandler)))
-
-	// loop over path to set handle to http
-	for path, handler := range pathToHandler {
-
-		// set handle
-		http.Handle(path, makeHandler(handler, c.dbHandler))
-		slog.Debug(fmt.Sprintf("Found path for register %s", path))
+	for _, pathHandler := range routePath {
+		http.Handle(pathHandler.Path, makeHandler(pathHandler, c.dbHandler))
+		slog.Debug(fmt.Sprintf("Found path for register %s", pathHandler.Path))
 	}
 }
 

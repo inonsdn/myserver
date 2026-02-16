@@ -18,6 +18,11 @@ type NotesRepo struct {
 	*BaseRepo
 }
 
+type CreateNotes struct {
+	Text   string    `json:"text"`
+	UserId uuid.UUID `json:"user_id"`
+}
+
 type Notes struct {
 	id     uuid.UUID
 	text   string
@@ -35,11 +40,11 @@ func RegisterRepo_Notes(dh *DatabaseHandler) {
 func (n *NotesRepo) CreateNotes(userId uuid.UUID, text string) uuid.UUID {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
-	statement := fmt.Sprintf("INSERT INTO %s (text, user) VALUES ($1, $2) RETURNING id", NOTES_TABLE_NAME)
+	statement := fmt.Sprintf("INSERT INTO %s (text, user_id) VALUES ($1, $2) RETURNING id", NOTES_TABLE_NAME)
 	var notesId uuid.UUID
-	err := n.pool.QueryRow(ctx, statement, text, userId).Scan(&notesId)
+	err := n.executor.QueryRow(ctx, []any{&notesId}, statement, text, userId)
 	if err != nil {
+		fmt.Println(err.Error())
 		slog.Error(err.Error())
 		return uuid.Nil
 	}
@@ -52,7 +57,7 @@ func (n *NotesRepo) GetAllNotes(userId uuid.UUID) []Notes {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	statement := fmt.Sprintf("SELECT id, text FROM %s WHERE user = $1", NOTES_TABLE_NAME)
+	statement := fmt.Sprintf("SELECT id, text FROM %s WHERE userId = $1", NOTES_TABLE_NAME)
 	rows, err := n.pool.Query(ctx, statement, userId)
 	if err != nil {
 		slog.Error(err.Error())

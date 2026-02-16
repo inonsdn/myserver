@@ -9,6 +9,12 @@ import (
 // type of function to received route handler which is wrapper of connection
 type RouteHandlerFunc func(*RouteHandler) error
 
+type RoutePathHandler struct {
+	Method  string
+	Path    string
+	Handler RouteHandlerFunc
+}
+
 type RouteHandler struct {
 	w         http.ResponseWriter
 	r         *http.Request
@@ -18,7 +24,7 @@ type RouteHandler struct {
 // Create handler function for serve http
 // by wrapping function
 // function must receive argument of route handler
-func makeHandler(f RouteHandlerFunc, dbHandler *database.DatabaseHandler) http.HandlerFunc {
+func makeHandler(h RoutePathHandler, dbHandler *database.DatabaseHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// new handler for this response
 		rh := &RouteHandler{
@@ -27,11 +33,36 @@ func makeHandler(f RouteHandlerFunc, dbHandler *database.DatabaseHandler) http.H
 			dbHandler: dbHandler,
 		}
 
-		// execute function
-		if err := f(rh); err != nil {
-			rh.Response(http.StatusInternalServerError, err.Error())
+		// verify method
+		if r.Method != h.Method {
+			rh.ResponseError(http.StatusMethodNotAllowed, "Invalid method")
+		} else {
+			// execute function
+			if err := h.Handler(rh); err != nil {
+				rh.Response(http.StatusInternalServerError, err.Error())
+			}
 		}
 	}
+}
+
+// wrapper function to get query params from url
+// eg. url is https://example.com/getUser?id=1
+// and format is /getUser
+// use this function to get id by GetQuery("id")
+// and this function will return value of given name of parameters
+func (rh *RouteHandler) GetQuery(name string) string {
+	return rh.r.URL.Query().Get(name)
+}
+
+func (rh *RouteHandler) GetJSON(requestBody any) error {
+	if err := json.NewDecoder(rh.r.Body).Decode(requestBody); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rh *RouteHandler) ResponseError(status int, message string) {
+	http.Error(rh.w, message, status)
 }
 
 // send response back in JSON format
@@ -42,7 +73,7 @@ func (rh *RouteHandler) ResponseJSON(status int, data any) {
 
 	// encoded data
 	if err := json.NewEncoder(rh.w).Encode(data); err != nil {
-		http.Error(rh.w, err.Error(), http.StatusInternalServerError)
+		rh.ResponseError(http.StatusInternalServerError, err.Error())
 	}
 }
 
