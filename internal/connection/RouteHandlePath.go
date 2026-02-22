@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"myserver/internal/database"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 var routePath = []RoutePathHandler{
@@ -13,14 +15,24 @@ var routePath = []RoutePathHandler{
 		Handler: GetUsers,
 	},
 	{
+		Method:  http.MethodGet,
+		Path:    "/myNotes/{userId}",
+		Handler: GetMyNotes,
+	},
+	{
 		Method:  http.MethodPost,
 		Path:    "/notes",
 		Handler: CreateNewNotes,
 	},
 	{
 		Method:  http.MethodPut,
-		Path:    "/notes/:id",
-		Handler: CreateNewNotes,
+		Path:    "/notes/{id}",
+		Handler: UpdateNotes,
+	},
+	{
+		Method:  http.MethodPost,
+		Path:    "/noteGroup",
+		Handler: CreateNewNoteGroup,
 	},
 }
 
@@ -61,7 +73,7 @@ func CreateNewNotes(rh *RouteHandler) error {
 
 	noteCon := rh.dbHandler.GetNotesConnection()
 
-	notesId := noteCon.CreateNotes(req.UserId, req.Text)
+	notesId := noteCon.CreateNotes(req)
 
 	rh.ResponseJSON(http.StatusOK, map[string]any{
 		"id": notesId,
@@ -70,8 +82,62 @@ func CreateNewNotes(rh *RouteHandler) error {
 	return nil
 }
 
-// func UpdateNotes(rh *RouteHandler) error {
-// 	id := rh.GetQuery("id")
+func CreateNewNoteGroup(rh *RouteHandler) error {
+	fmt.Println("CreateNewNoteGroup")
+	req := database.CreateGroupNote{}
 
-// 	return nil
-// }
+	if err := rh.GetJSON(&req); err != nil {
+		rh.ResponseError(http.StatusBadRequest, "Invalid body")
+		return nil
+	}
+
+	noteCon := rh.dbHandler.GetNotesConnection()
+
+	notesId := noteCon.CreateGroupNote(req)
+
+	rh.ResponseJSON(http.StatusOK, map[string]any{
+		"id": notesId,
+	})
+
+	return nil
+}
+
+func UpdateNotes(rh *RouteHandler) error {
+	id, err := uuid.Parse(rh.r.PathValue("id"))
+	if err != nil {
+		rh.ResponseError(http.StatusBadRequest, "Invalid UUID")
+		return err
+	}
+	req := database.UpdateNotes{}
+
+	if err := rh.GetJSON(&req); err != nil {
+		rh.ResponseError(http.StatusBadRequest, "Invalid body")
+		return nil
+	}
+
+	fmt.Println(req.NoteGroup)
+
+	noteCon := rh.dbHandler.GetNotesConnection()
+	noteCon.UpdateNotes(id, req.Text, req.Title, req.NoteGroup)
+
+	rh.ResponseJSON(http.StatusOK, map[string]any{
+		"id": id,
+	})
+
+	return nil
+}
+
+func GetMyNotes(rh *RouteHandler) error {
+	fmt.Println("Get user")
+	userId, err := uuid.Parse(rh.r.PathValue("userId"))
+	if err != nil {
+		rh.ResponseError(http.StatusBadRequest, "Invalid UUID")
+		return err
+	}
+	noteCon := rh.dbHandler.GetNotesConnection()
+	notes := noteCon.GetAllNotes(userId)
+
+	rh.ResponseJSON(http.StatusOK, notes)
+
+	return nil
+}

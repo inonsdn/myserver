@@ -2,13 +2,78 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type SQLStatementInfo struct {
+	cols []string
+	vals []any
+}
+
+func (s *SQLStatementInfo) GetStatementCols() string {
+	return strings.Join(s.cols, ",")
+}
+
+func (s *SQLStatementInfo) GetStatementArgs() string {
+	argsStatements := []string{}
+	for i := 1; i <= len(s.vals); i++ {
+		argsStatements = append(argsStatements, fmt.Sprintf("$%d", i))
+	}
+	return strings.Join(argsStatements, ",")
+}
+
+func (s *SQLStatementInfo) GetUpdateStatementArgs() string {
+	argsStatements := []string{}
+	for i := 1; i <= len(s.vals); i++ {
+		argsStatements = append(argsStatements, fmt.Sprintf("$%d", i))
+	}
+	return strings.Join(argsStatements, ",")
+}
+
+func SQLStructExtraction[T any](s T) SQLStatementInfo {
+	key := reflect.TypeOf(s)
+	val := reflect.ValueOf(s)
+
+	colNames := []string{}
+	valNames := []any{}
+
+	for i := 0; i < key.NumField(); i++ {
+		colName := key.Field(i).Tag.Get("json")
+		colVal := val.Field(i)
+		colNames = append(colNames, colName)
+		valNames = append(valNames, colVal)
+	}
+
+	return SQLStatementInfo{
+		cols: colNames,
+		vals: valNames,
+	}
+}
+
+type SQLValue[T any] struct {
+	Val    T
+	isNull bool
+}
+
+func SQLVal[T any](val T) SQLValue[T] {
+	return SQLValue[T]{
+		Val: val,
+	}
+}
+
+func SQLNull[T any]() SQLValue[T] {
+	return SQLValue[T]{
+		isNull: true,
+	}
+}
 
 type Uuid struct {
 	uuid uuid.UUID
@@ -23,6 +88,9 @@ func UuidCvt(v [16]uint8) uuid.UUID {
 }
 
 func UuidCvtFromDb(v any) uuid.UUID {
+	if v == nil {
+		return uuid.Nil
+	}
 	return uuid.UUID(v.([16]uint8))
 }
 
@@ -56,6 +124,7 @@ type Record struct {
 type DBExecutor interface {
 	Connect() error
 	Disconnect()
+	Execute(context.Context, string, ...any) (int64, error)
 	Query(context.Context, string, ...any) ([]map[string]any, error)
 	QueryRow(context.Context, []any, string, ...any) error
 }
@@ -70,6 +139,15 @@ func NewPGExecutor(config *pgxpool.Config) *PGExecutor {
 	return &PGExecutor{
 		config: config,
 	}
+}
+
+func (pg *PGExecutor) Execute(ctx context.Context, statement string, args ...any) (int64, error) {
+
+	tag, err := pg.pool.Exec(ctx, statement, args...)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
 }
 
 func (pg *PGExecutor) QueryRow(ctx context.Context, dest []any, statement string, args ...any) error {
