@@ -48,8 +48,20 @@ func SQLStructExtraction[T any](s T) SQLStatementInfo {
 	for i := 0; i < key.NumField(); i++ {
 		colName := key.Field(i).Tag.Get("json")
 		colVal := val.Field(i)
+		actualValue := colVal.Interface()
+
+		switch colVal.Interface().(type) {
+		case uuid.UUID:
+			// got null value
+			if actualValue == uuid.Nil {
+				valNames = append(valNames, nil)
+			} else {
+				valNames = append(valNames, actualValue.(uuid.UUID).String())
+			}
+		default:
+			valNames = append(valNames, colVal)
+		}
 		colNames = append(colNames, colName)
-		valNames = append(valNames, colVal)
 	}
 
 	return SQLStatementInfo{
