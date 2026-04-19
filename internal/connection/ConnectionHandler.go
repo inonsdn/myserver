@@ -31,11 +31,10 @@ func NewConnectionHandler(config *config.Config, dbHandler *database.DatabaseHan
 
 // register route path for handle http path request
 // route handler function must received router handler object and returning error
-//
-// TODO: for middleware will implement next...
 func (c *ConnectionHandler) RegisterRoute(routePaths []RoutePathHandler) {
+	jwtSecret := c.config.GetJwtSecret()
 	for _, pathHandler := range routePaths {
-		http.Handle(pathHandler.Path, makeHandler(pathHandler, c.dbHandler))
+		http.Handle(pathHandler.Path, makeHandler(jwtSecret, pathHandler, c.dbHandler))
 		slog.Debug(fmt.Sprintf("Found path for register %s", pathHandler.Path))
 	}
 }

@@ -11,9 +11,10 @@ import (
 type RouteHandlerFunc func(*RouteHandler) error
 
 type RoutePathHandler struct {
-	Method  string
-	Path    string
-	Handler RouteHandlerFunc
+	Method      string
+	Path        string
+	Handler     RouteHandlerFunc
+	RequireAuth bool
 }
 
 type RouteHandler struct {
@@ -25,8 +26,8 @@ type RouteHandler struct {
 // Create handler function for serve http
 // by wrapping function
 // function must receive argument of route handler
-func makeHandler(h RoutePathHandler, dbHandler *database.DatabaseHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func makeHandler(secret []byte, h RoutePathHandler, dbHandler *database.DatabaseHandler) http.HandlerFunc {
+	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 		// new handler for this response
 		rh := &RouteHandler{
 			w:         w,
@@ -39,13 +40,24 @@ func makeHandler(h RoutePathHandler, dbHandler *database.DatabaseHandler) http.H
 			rh.ResponseError(http.StatusMethodNotAllowed, "Invalid method")
 			fmt.Println("Got error when execute handler:", r.Method, h.Method)
 		} else {
-			// execute function
-			if err := h.Handler(rh); err != nil {
+			var err error
+			// in case of require auth, execute auth middleware with handler
+			if h.RequireAuth {
+				err = authMiddleware(secret, h.Handler)(rh)
+			} else {
+				// execute function
+				err = h.Handler(rh)
+			}
+
+			// error handling for execute function
+			if err != nil {
 				fmt.Println("Got error when execute handler:", err.Error())
 				rh.Response(http.StatusInternalServerError, err.Error())
 			}
 		}
 	}
+
+	return handlerFunc
 }
 
 // wrapper function to get query params from url
@@ -91,4 +103,9 @@ func (rh *RouteHandler) Response(status int, body string) {
 
 func (rh *RouteHandler) GetPathValue(name string) string {
 	return rh.r.PathValue(name)
+}
+
+func (rh *RouteHandler) GetUserId() string {
+	userId, _ := rh.r.Context().Value(userIdKey).(string)
+	return userId
 }

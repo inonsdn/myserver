@@ -13,6 +13,7 @@ type Config struct {
 	host        string
 	port        int
 	databaseUrl string
+	jwtSecret   []byte
 }
 
 type ConfigFunc func(c *Config)
@@ -29,10 +30,15 @@ func (c *Config) GetAddr() string {
 	return fmt.Sprintf("%s:%d", c.host, c.port)
 }
 
+func (c *Config) GetJwtSecret() []byte {
+	return c.jwtSecret
+}
+
 func defaultConfig() *Config {
 	return &Config{
-		host: "localhost",
-		port: 8080,
+		host:      "localhost",
+		port:      8080,
+		jwtSecret: []byte(os.Getenv("JWT_SECRET")),
 	}
 }
 
