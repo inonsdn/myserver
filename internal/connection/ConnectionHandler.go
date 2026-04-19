@@ -33,8 +33,8 @@ func NewConnectionHandler(config *config.Config, dbHandler *database.DatabaseHan
 // route handler function must received router handler object and returning error
 //
 // TODO: for middleware will implement next...
-func (c *ConnectionHandler) RegisterRoute() {
-	for _, pathHandler := range routePath {
+func (c *ConnectionHandler) RegisterRoute(routePaths []RoutePathHandler) {
+	for _, pathHandler := range routePaths {
 		http.Handle(pathHandler.Path, makeHandler(pathHandler, c.dbHandler))
 		slog.Debug(fmt.Sprintf("Found path for register %s", pathHandler.Path))
 	}

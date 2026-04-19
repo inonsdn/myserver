@@ -5,6 +5,7 @@ import (
 	"myserver/internal/config"
 	"myserver/internal/connection"
 	"myserver/internal/database"
+	"myserver/internal/plugins"
 )
 
 func main() {
@@ -27,8 +28,11 @@ func main() {
 	// construct http connection handler
 	handler := connection.NewConnectionHandler(serverConfig, dbHandler)
 
+	// get all route path from plugins
+	routePaths := plugins.GetRoutePath()
+
 	// register route handler before run
-	handler.RegisterRoute()
+	handler.RegisterRoute(routePaths)
 
 	// run forever loop
 	handler.RunServe()

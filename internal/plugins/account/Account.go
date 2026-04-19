@@ -1,19 +1,15 @@
-package connection
+package notes
 
 import (
 	"fmt"
+	"myserver/internal/connection"
 	"myserver/internal/database"
 	"net/http"
 
 	"github.com/google/uuid"
 )
 
-var routePath = []RoutePathHandler{
-	{
-		Method:  http.MethodGet,
-		Path:    "/getAllUsers",
-		Handler: GetUsers,
-	},
+var AccountRoutePath = []connection.RoutePathHandler{
 	{
 		Method:  http.MethodGet,
 		Path:    "/myNotes/{userId}",
@@ -41,33 +37,7 @@ var routePath = []RoutePathHandler{
 	},
 }
 
-func getRoutes() map[string]RouteHandlerFunc {
-	return map[string]RouteHandlerFunc{
-		"/":         Home,
-		"/getUser":  GetUsers,
-		"/newNotes": CreateNewNotes,
-	}
-}
-
-func Home(rh *RouteHandler) error {
-	fmt.Println("HOME CALLED")
-	rh.Response(http.StatusOK, "Hello")
-	return nil
-}
-
-func GetUsers(rh *RouteHandler) error {
-	fmt.Println("Get user")
-	userCon := rh.DbHandler.GetUserConnection()
-	allUsers := userCon.GetAllUser()
-	fmt.Println("All users: ")
-	fmt.Println(allUsers)
-
-	rh.ResponseJSON(http.StatusOK, allUsers)
-
-	return nil
-}
-
-func CreateNewNotes(rh *RouteHandler) error {
+func CreateNewNotes(rh *connection.RouteHandler) error {
 	fmt.Println("CreateNewNotes")
 	req := database.CreateNotes{}
 
@@ -87,7 +57,7 @@ func CreateNewNotes(rh *RouteHandler) error {
 	return nil
 }
 
-func CreateNewNoteGroup(rh *RouteHandler) error {
+func CreateNewNoteGroup(rh *connection.RouteHandler) error {
 	fmt.Println("CreateNewNoteGroup")
 	req := database.CreateGroupNote{}
 
@@ -107,8 +77,8 @@ func CreateNewNoteGroup(rh *RouteHandler) error {
 	return nil
 }
 
-func UpdateNotes(rh *RouteHandler) error {
-	id, err := uuid.Parse(rh.r.PathValue("id"))
+func UpdateNotes(rh *connection.RouteHandler) error {
+	id, err := uuid.Parse(rh.GetPathValue("id"))
 	if err != nil {
 		rh.ResponseError(http.StatusBadRequest, "Invalid UUID")
 		return err
@@ -132,9 +102,9 @@ func UpdateNotes(rh *RouteHandler) error {
 	return nil
 }
 
-func GetMyNotes(rh *RouteHandler) error {
+func GetMyNotes(rh *connection.RouteHandler) error {
 	fmt.Println("Get user")
-	userId, err := uuid.Parse(rh.r.PathValue("userId"))
+	userId, err := uuid.Parse(rh.GetPathValue("userId"))
 	if err != nil {
 		rh.ResponseError(http.StatusBadRequest, "Invalid UUID")
 		return err
@@ -147,9 +117,9 @@ func GetMyNotes(rh *RouteHandler) error {
 	return nil
 }
 
-func GetMyNotesById(rh *RouteHandler) error {
+func GetMyNotesById(rh *connection.RouteHandler) error {
 	fmt.Println("Get notes by id")
-	id, err := uuid.Parse(rh.r.PathValue("id"))
+	id, err := uuid.Parse(rh.GetPathValue("id"))
 	if err != nil {
 		rh.ResponseError(http.StatusBadRequest, "Invalid UUID")
 		return err

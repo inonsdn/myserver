@@ -2,6 +2,7 @@ package connection
 
 import (
 	"encoding/json"
+	"fmt"
 	"myserver/internal/database"
 	"net/http"
 )
@@ -18,7 +19,7 @@ type RoutePathHandler struct {
 type RouteHandler struct {
 	w         http.ResponseWriter
 	r         *http.Request
-	dbHandler *database.DatabaseHandler
+	DbHandler *database.DatabaseHandler
 }
 
 // Create handler function for serve http
@@ -30,15 +31,17 @@ func makeHandler(h RoutePathHandler, dbHandler *database.DatabaseHandler) http.H
 		rh := &RouteHandler{
 			w:         w,
 			r:         r,
-			dbHandler: dbHandler,
+			DbHandler: dbHandler,
 		}
 
 		// verify method
 		if r.Method != h.Method {
 			rh.ResponseError(http.StatusMethodNotAllowed, "Invalid method")
+			fmt.Println("Got error when execute handler:", r.Method, h.Method)
 		} else {
 			// execute function
 			if err := h.Handler(rh); err != nil {
+				fmt.Println("Got error when execute handler:", err.Error())
 				rh.Response(http.StatusInternalServerError, err.Error())
 			}
 		}
@@ -84,4 +87,8 @@ func (rh *RouteHandler) Response(status int, body string) {
 	rh.w.Header().Set("Content-Type", "text/plain")
 	rh.w.WriteHeader(status)
 	rh.w.Write([]byte(body))
+}
+
+func (rh *RouteHandler) GetPathValue(name string) string {
+	return rh.r.PathValue(name)
 }

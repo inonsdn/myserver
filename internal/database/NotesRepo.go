@@ -148,3 +148,28 @@ func (n *NotesRepo) GetAllNotes(userId uuid.UUID) []Notes {
 	}
 	return allNotes
 }
+
+func (n *NotesRepo) GetNotesById(noteId uuid.UUID) Notes {
+	allNotes := []Notes{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	statement := fmt.Sprintf("SELECT id, text, user_id, title, note_group FROM %s WHERE id = $1", NOTES_TABLE_NAME)
+	columnToValues, err := n.executor.Query(ctx, statement, noteId)
+	if err != nil {
+		slog.Error(err.Error())
+		return allNotes[0] // Return the first (and only) note if found, or a zero value if not found
+	}
+
+	for _, columnToValue := range columnToValues {
+		allNotes = append(allNotes, Notes{
+			Id:        UuidCvtFromDb(columnToValue["id"]),
+			Text:      columnToValue["text"].(string),
+			UserId:    UuidCvtFromDb(columnToValue["user_id"]),
+			Title:     columnToValue["title"].(string),
+			NoteGroup: UuidCvtFromDb(columnToValue["note_group"]),
+		})
+	}
+	return allNotes[0]
+}
