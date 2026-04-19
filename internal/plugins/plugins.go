@@ -3,8 +3,12 @@ package plugins
 import (
 	"myserver/internal/connection"
 	"myserver/internal/plugins/notes"
+	"myserver/internal/plugins/user"
 )
 
 func GetRoutePath() []connection.RoutePathHandler {
-	return notes.NoteRoutePath
+	allPath := []connection.RoutePathHandler{}
+	allPath = append(allPath, user.UserRoutePath...)
+	allPath = append(allPath, notes.NoteRoutePath...)
+	return allPath
 }

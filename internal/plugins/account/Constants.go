@@ -1,0 +1,10 @@
+package account
+
+const (
+	CURRENCY_THB = 1
+	CURRENCY_USD = 2
+
+	ACTION_DEPOSIT  = 1
+	ACTION_WITHDRAW = 2
+	ACTION_INTEREST = 3
+)

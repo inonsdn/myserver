@@ -13,31 +13,37 @@ type NotesHandler struct {
 	dbHandler *database.DatabaseHandler
 }
 
+// TODO: make all function note to require auth and get user id from context of request instead of path param
 var NoteRoutePath = []connection.RoutePathHandler{
 	{
-		Method:  http.MethodGet,
-		Path:    "/myNotes/{userId}",
-		Handler: GetMyNotes,
+		Method:      http.MethodGet,
+		Path:        "/myNotes/{userId}",
+		Handler:     GetMyNotes,
+		RequireAuth: false,
 	},
 	{
-		Method:  http.MethodGet,
-		Path:    "/getNotes/{id}",
-		Handler: GetMyNotesById,
+		Method:      http.MethodGet,
+		Path:        "/getNotes/{id}",
+		Handler:     GetMyNotesById,
+		RequireAuth: false,
 	},
 	{
-		Method:  http.MethodPost,
-		Path:    "/notes",
-		Handler: CreateNewNotes,
+		Method:      http.MethodPost,
+		Path:        "/notes",
+		Handler:     CreateNewNotes,
+		RequireAuth: false,
 	},
 	{
-		Method:  http.MethodPut,
-		Path:    "/notes/{id}",
-		Handler: UpdateNotes,
+		Method:      http.MethodPut,
+		Path:        "/notes/{id}",
+		Handler:     UpdateNotes,
+		RequireAuth: false,
 	},
 	{
-		Method:  http.MethodPost,
-		Path:    "/noteGroup",
-		Handler: CreateNewNoteGroup,
+		Method:      http.MethodPost,
+		Path:        "/noteGroup",
+		Handler:     CreateNewNoteGroup,
+		RequireAuth: false,
 	},
 }
 

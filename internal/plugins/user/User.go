@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-var userRoutePath = []connection.RoutePathHandler{
+var UserRoutePath = []connection.RoutePathHandler{
 	{
 		Method:      http.MethodGet,
 		Path:        "/users",

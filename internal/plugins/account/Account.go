@@ -9,32 +9,26 @@ import (
 	"github.com/google/uuid"
 )
 
-var AccountRoutePath = []connection.RoutePathHandler{
-	{
-		Method:  http.MethodGet,
-		Path:    "/myNotes/{userId}",
-		Handler: GetMyNotes,
-	},
-	{
-		Method:  http.MethodGet,
-		Path:    "/getNotes/{id}",
-		Handler: GetMyNotesById,
-	},
-	{
-		Method:  http.MethodPost,
-		Path:    "/notes",
-		Handler: CreateNewNotes,
-	},
-	{
-		Method:  http.MethodPut,
-		Path:    "/notes/{id}",
-		Handler: UpdateNotes,
-	},
-	{
-		Method:  http.MethodPost,
-		Path:    "/noteGroup",
-		Handler: CreateNewNoteGroup,
-	},
+var AccountRoutePath = []connection.RoutePathHandler{}
+
+func createTransaction(rh *connection.RouteHandler) error {
+	fmt.Println("Add transaction")
+	req := database.CreateTransaction{}
+
+	if err := rh.GetJSON(&req); err != nil {
+		rh.ResponseError(http.StatusBadRequest, "Invalid body")
+		return nil
+	}
+
+	accountCon := rh.DbHandler.GetAccountConnection()
+
+	transactionId := accountCon.AddTransaction(req)
+
+	rh.ResponseJSON(http.StatusOK, map[string]any{
+		"id": transactionId,
+	})
+
+	return nil
 }
 
 func CreateNewNotes(rh *connection.RouteHandler) error {
